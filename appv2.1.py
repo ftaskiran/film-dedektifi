@@ -39,6 +39,35 @@ def film_detay_getir(film_adi, yil):
 st.title("🕵️‍♂️ MovieSherlock")
 st.caption("Kayıp filmlerin izini sürer.")
 
+# --- MANUEL ARAMA ALANI (YENİ) ---
+st.subheader("🔍 Tekli Film Sorgula")
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    manuel_film = st.text_input("Film Adı Giriniz", placeholder="Örn: Inception")
+with col2:
+    manuel_yil = st.text_input("Yıl (Opsiyonel)", placeholder="2010")
+
+if st.button("🕵️‍♂️ Sherlock'a Sor"):
+    if manuel_film:
+        with st.spinner('Sherlock büyütecini hazırlıyor...'):
+            platformlar, poster = film_detay_getir(manuel_film, manuel_yil)
+            
+            if platformlar:
+                st.success(f"Buldum! **{manuel_film}** şu platformlarda var:")
+                c1, c2 = st.columns([1, 3])
+                with c1:
+                    if poster: st.image(poster)
+                with c2:
+                    for p in platformlar:
+                        st.write(f"✅ {p}")
+            else:
+                st.warning("Maalesef bu film şu an Türkiye'deki ana platformlarda görünmüyor.")
+    else:
+        st.error("Lütfen bir film adı yazın.")
+
+st.divider() # Dosya yükleme kısmıyla arayı ayırmak için şık bir çizgi
+
 st.sidebar.header("Arşivi Yükle")
 yuklenen_dosya = st.sidebar.file_uploader("Letterboxd CSV", type=["csv"])
 
@@ -96,3 +125,8 @@ if yuklenen_dosya is not None:
             with st.expander("🎞️ Şu An Platformlarda Bulunmayanlar"):
                 for f in yok_listesi:
                     st.write(f"⚪ {f['ad']} ({f['yil']})")
+
+    # Kodun en sonuna, tüm döngülerin dışına ekle:
+st.divider()
+st.caption("🕵️‍♂️ **MovieSherlock** | Film Dedektifi tarafından tutkuyla geliştirildi.")
+st.caption("🎬 *This product uses the TMDB API but is not endorsed or certified by TMDB.*")
