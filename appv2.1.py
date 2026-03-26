@@ -171,6 +171,37 @@ if yuklenen_dosya is not None:
 # --- MANUEL ARAMA BİTİŞİNDEN HEMEN SONRA ---
 st.divider()
 
+# Sidebar'ın en altına şık bir X butonu
+with st.sidebar:
+    st.divider() # Üstteki menü elemanlarından ince bir çizgiyle ayırır
+    st.markdown(
+        """
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+            <p style="font-size: 0.85rem; color: #808080; margin-bottom: 8px; font-family: sans-serif;">
+                Sherlock'u X'te Takip Et
+            </p>
+            <a href="https://x.com/MovieSherlockHQ" target="_blank" style="text-decoration: none;">
+                <div style="
+                    background-color: #000000; 
+                    color: #ffffff; 
+                    padding: 8px 20px; 
+                    border-radius: 25px; 
+                    font-weight: bold; 
+                    font-family: sans-serif;
+                    display: flex; 
+                    align-items: center; 
+                    gap: 10px;
+                    border: 1px solid #444;
+                ">
+                    <span style="font-size: 1.2rem;">𝕏</span> 
+                    <span>@MovieSherlock</span>
+                </div>
+            </a>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+
 # --- BANA FİLM ÖNER (RANDOMIZER) ---
 # Senin 'Altın Liste'ndeki 12 film ve TMDB ID'leri
 film_havuzu = [
