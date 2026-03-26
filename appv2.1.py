@@ -68,7 +68,7 @@ def film_detay_getir(sorgu, yil=None):
 
 # --- ARAYÜZ BAŞLIĞI ---
 st.title("🕵️‍♂️ MovieSherlock")
-st.caption("Kayıp filmlerin izini sürer, IMDb ID'lerini bile tanır.")
+st.caption("Kayıp filmlerin izini sürer, IMDb ID'lerini de tanır.")
 
 # --- MANUEL ARAMA ALANI (EN ÜSTTE) ---
 st.subheader("🔍 Hızlı Sorgu")
@@ -106,9 +106,15 @@ st.divider()
 st.sidebar.header("📽️ Arşivi Yükle")
 
 with st.sidebar.expander("❓ Liste Nasıl İndirilir?"):
-    st.info("Letterboxd veya IMDb Watchlist CSV dosyanızı buraya yükleyin.")
+    st.info("""
+    **Letterboxd:**
+    Settings > Import & Export > Export Data yolunu izleyin.
+    
+    **IMDb:**
+    Watchlist sayfanıza gidin, listenin en altındaki 'Export' butonuna basın.
+    """)
 
-kaynak_secimi = st.sidebar.selectbox("Liste Kaynağı Seçin", ["Letterboxd", "IMDb Watchlist"])
+kaynak_secimi = st.sidebar.selectbox("Liste Kaynağı Seçin", ["Letterboxd", "IMDb"])
 yuklenen_dosya = st.sidebar.file_uploader(f"{kaynak_secimi} CSV Dosyası", type=["csv"])
 
 if yuklenen_dosya is not None:
@@ -161,6 +167,48 @@ if yuklenen_dosya is not None:
                             st.image(film['poster'], use_container_width=True)
                         st.markdown(f"**{film['ad']}**")
                         st.caption(f"{film['yil']}")
+
+# --- MANUEL ARAMA BİTİŞİNDEN HEMEN SONRA ---
+st.divider()
+
+# --- BANA FİLM ÖNER (RANDOMIZER) ---
+# Senin 'Altın Liste'ndeki 12 film ve TMDB ID'leri
+film_havuzu = [
+    {"ad": "Nocturnal Animals", "id": "340666"},
+    {"ad": "Atomic Blonde", "id": "341013"},
+    {"ad": "Manchester By The Sea", "id": "334541"},
+    {"ad": "Loving Vincent", "id": "339877"},
+    {"ad": "Burning", "id": "491584"},
+    {"ad": "Decision to Leave", "id": "705996"},
+    {"ad": "Constantine", "id": "561"},
+    {"ad": "Lovers of the Arctic Circle", "id": "1414"},
+    {"ad": "The Devil All The Time", "id": "499932"},
+    {"ad": "Uncut Gems", "id": "473033"},
+    {"ad": "I'm Thinking of Ending Things", "id": "500840"},
+    {"ad": "La La Land", "id": "313369"}
+]
+
+# Arayüzdeki kutu tasarımı
+with st.expander(" Karar Veremedin mi? Sherlock'a Sor", expanded=True):
+    st.write("Sherlock favorilerinden rastgele seçsin.")
+    
+    if st.button("Bana Film Öner"):
+        secilen_film = random.choice(film_havuzu)
+        
+        # Sherlock araştırıyor animasyonu
+        with st.spinner('Sherlock arşivde iz sürüyor...'):
+            oneri_poster = get_poster_only(secilen_film['id'])
+            
+            st.markdown(f"### 🔍 Önerim: **{secilen_film['ad']}**")
+            
+            if oneri_poster:
+                # Posteri biraz daha kibar (küçük) gösterelim ki çok yer kaplamasın
+                st.image(oneri_poster, width=250)
+            
+            st.success("Bu film tam sana göre görünüyor!")
+
+st.divider()
+# --- KÜRASYON KÖŞESİ (SİSLİ TEPELER) BURADAN DEVAM EDER ---
 
 # --- ŞİMDİ EN ALTA KÜRASYON KÖŞESİNİ EKLEYELİM ---
 st.write("") # Boşluk
