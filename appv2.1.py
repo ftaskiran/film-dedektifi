@@ -1,30 +1,105 @@
 import streamlit as st
+import os
+import base64
 import requests
 import pandas as pd
 import time
 import random
 import warnings
 
-# Gereksiz sistem uyarılarını gizle
-warnings.filterwarnings("ignore")
-
-# Sayfa Ayarları
+# --- 1. KURAL: SET_PAGE_CONFIG SADECE BİR KEZ VE EN TEPEDE OLMALI ---
 st.set_page_config(page_title="MovieSherlock", page_icon="🕵️‍♂️", layout="wide")
 
-# Senin API Key'in
+# Gereksiz sistem uyarılarını gizle
+warnings.filterwarnings("ignore")
 api_key = "f57e54dbfb985cb1733c8299b78b2a5e"
 
-# --- YARDIMCI FONKSİYONLAR ---
+# --- 2. İKONU BASE64 FORMATINA ÇEVİRME ---
+def get_base64_encoded_image(image_path):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return None
 
+icon_base64 = get_base64_encoded_image("icon.png")
+
+# --- 3. PWA VE İKON MÜHÜRLEME (JS ENJEKSİYONU) ---
+# --- PWA, İKON VE AKILLI POPUP (Sherlock Usulü) ---
+if icon_base64:
+    icon_url = f"data:image/png;base64,{icon_base64}"
+    st.markdown(f"""
+        <style>
+            /* Popup Tasarımı */
+            #pwa-popup {{
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: #1a1a1a;
+                color: #d4af37; /* Altın Sarısı */
+                padding: 20px;
+                border-radius: 15px;
+                border: 2px solid #d4af37;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                z-index: 999999;
+                width: 85%;
+                max-width: 350px;
+                font-family: sans-serif;
+                display: none; /* Varsayılan olarak gizli */
+                text-align: center;
+            }}
+            .popup-close {{
+                position: absolute;
+                top: 5px;
+                right: 10px;
+                cursor: pointer;
+                color: #888;
+                font-size: 20px;
+            }}
+        </style>
+
+        <div id="pwa-popup">
+            <span class="popup-close" onclick="document.getElementById('pwa-popup').style.display='none'">×</span>
+            <strong>🕵️‍♂️ Sherlock'un Tavsiyesi</strong><br><br>
+            Uygulama deneyimi için aşağıdaki 
+            <b style="color:white;">Paylaş (Yukarı Ok)</b> butonuna bas ve 
+            <b style="color:white;">"Ana Ekrana Ekle"</b> seçeneğini mühürle!
+        </div>
+
+        <script>
+            // Safari Head Enjeksiyonu
+            var head = window.parent.document.getElementsByTagName('head')[0];
+            
+            var link = window.parent.document.createElement('link');
+            link.rel = 'apple-touch-icon';
+            link.href = '{icon_url}';
+            head.appendChild(link);
+
+            var meta = window.parent.document.createElement('meta');
+            meta.name = 'apple-mobile-web-app-capable';
+            meta.content = 'yes';
+            head.appendChild(meta);
+
+            // iPhone Kontrolü ve Popup Gösterme
+            var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            var isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+            if (isIOS && !isStandalone) {{
+                setTimeout(function() {{
+                    document.getElementById('pwa-popup').style.display = 'block';
+                }}, 2000); // Site açıldıktan 2 saniye sonra göster
+            }}
+        </script>
+    """, unsafe_allow_html=True)
+
+# --- YARDIMCI FONKSİYONLAR ---
 def get_poster_only(tmdb_id):
-    """Kürasyon köşesi için TMDB'den sadece poster çeker"""
     try:
         url = f"https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={api_key}&language=tr-TR"
         res = requests.get(url).json()
         if res.get('poster_path'):
             return f"https://image.tmdb.org/t/p/w500{res['poster_path']}"
-    except:
-        return None
+    except: return None
     return None
 
 def film_detay_getir(sorgu, yil=None):
@@ -32,7 +107,6 @@ def film_detay_getir(sorgu, yil=None):
         m_id = None
         poster_path = None
         film_adi_gercek = sorgu 
-
         if str(sorgu).strip().lower().startswith("tt"):
             find_url = f"https://api.themoviedb.org/3/find/{sorgu}?api_key={api_key}&external_source=imdb_id"
             res = requests.get(find_url).json()
@@ -54,55 +128,38 @@ def film_detay_getir(sorgu, yil=None):
             poster = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
             p_url = f"https://api.themoviedb.org/3/movie/{m_id}/watch/providers?api_key={api_key}"
             p_res = requests.get(p_url).json()
-            
             platformlar = []
             if 'TR' in p_res.get('results', {}) and 'flatrate' in p_res['results']['TR']:
                 platformlar = [p['provider_name'] for p in p_res['results']['TR']['flatrate']]
-            
             return platformlar, poster, film_adi_gercek
-            
-    except Exception as e:
-        return [], None, sorgu
-        
+    except: return [], None, sorgu
     return [], None, sorgu
 
-# --- ARAYÜZ BAŞLIĞI ---
+# --- ARAYÜZ ---
 st.title("🕵️‍♂️ MovieSherlock")
-st.caption("Kayıp filmlerin izini sürer, IMDb ID'lerini de tanır.")
+st.caption("Kayıp filmlerin izini sürer.")
 
-# --- MANUEL ARAMA ALANI (EN ÜSTTE) ---
 st.subheader("🔍 Hızlı Sorgu")
 col1, col2 = st.columns([3, 1])
-
-with col1:
-    manuel_film = st.text_input("Film Adı veya IMDb ID Giriniz", placeholder="Örn: Inception veya tt15239678")
-with col2:
-    manuel_yil = st.text_input("Yıl (Opsiyonel)", placeholder="2010")
+with col1: manuel_film = st.text_input("Film Adı veya IMDb ID", placeholder="Örn: Inception")
+with col2: manuel_yil = st.text_input("Yıl", placeholder="2010")
 
 if st.button("🕵️‍♂️ Sherlock'a Sor"):
     if manuel_film:
         with st.spinner('Sherlock araştırıyor...'):
             platformlar, poster, gercek_ad = film_detay_getir(manuel_film, manuel_yil)
-            
             if platformlar:
                 st.success(f"Buldum! **{gercek_ad}** şu platformlarda var:")
                 c1, c2 = st.columns([1, 3])
-                with c1:
+                with c1: 
                     if poster: st.image(poster, use_container_width=True)
                 with c2:
-                    for p in platformlar:
-                        st.write(f"✅ {p}")
-            else:
-                st.warning(f"Maalesef **{gercek_ad}** şu an Türkiye'deki ana platformlarda görünmüyor.")
-    else:
-        st.error("Lütfen bir film adı veya ID yazın.")
+                    for p in platformlar: st.write(f"✅ {p}")
+            else: st.warning("Maalesef Türkiye platformlarında bulunamadı.")
 
 st.divider()
 
-# --- LİSTE YÜKLEME SONUÇLARI BURAYA GELECEK ---
-# (Sidebar'dan yüklenen listelerin sonuçları bu alanda görünür)
-
-# --- SOL MENÜ (SIDEBAR) ---
+# --- SIDEBAR & TWITTER ---
 st.sidebar.header("📽️ Arşivi Yükle")
 
 with st.sidebar.expander("❓ Liste Nasıl İndirilir?"):
@@ -202,80 +259,22 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-# --- BANA FİLM ÖNER (RANDOMIZER) ---
-# Senin 'Altın Liste'ndeki 12 film ve TMDB ID'leri
+# --- BANA FİLM ÖNER ---
 film_havuzu = [
-    {"ad": "Nocturnal Animals", "id": "340666"},
-    {"ad": "Atomic Blonde", "id": "341013"},
-    {"ad": "Manchester By The Sea", "id": "334541"},
-    {"ad": "Loving Vincent", "id": "339877"},
-    {"ad": "Burning", "id": "491584"},
-    {"ad": "Decision to Leave", "id": "705996"},
-    {"ad": "Constantine", "id": "561"},
-    {"ad": "Lovers of the Arctic Circle", "id": "1414"},
-    {"ad": "The Devil All The Time", "id": "499932"},
-    {"ad": "Uncut Gems", "id": "473033"},
-    {"ad": "I'm Thinking of Ending Things", "id": "500840"},
-    {"ad": "La La Land", "id": "313369"}
+    {"ad": "Nocturnal Animals", "id": "340666"}, {"ad": "Atomic Blonde", "id": "341013"},
+    {"ad": "Manchester By The Sea", "id": "334541"}, {"ad": "Loving Vincent", "id": "339877"},
+    {"ad": "Burning", "id": "491584"}, {"ad": "Decision to Leave", "id": "705996"},
+    {"ad": "Constantine", "id": "561"}, {"ad": "Lovers of the Arctic Circle", "id": "1414"},
+    {"ad": "The Devil All The Time", "id": "499932"}, {"ad": "Uncut Gems", "id": "473033"},
+    {"ad": "I'm Thinking of Ending Things", "id": "500840"}, {"ad": "La La Land", "id": "313369"}
 ]
 
-# Arayüzdeki kutu tasarımı
-with st.expander(" Karar Veremedin mi? Sherlock'a Sor", expanded=True):
-    st.write("Sherlock favorilerinden rastgele seçsin.")
-    
+with st.expander("Karar Veremedin mi? Sherlock'a Sor", expanded=True):
     if st.button("Bana Film Öner"):
-        secilen_film = random.choice(film_havuzu)
-        
-        # Sherlock araştırıyor animasyonu
-        with st.spinner('Sherlock arşivde iz sürüyor...'):
-            oneri_poster = get_poster_only(secilen_film['id'])
-            
-            st.markdown(f"### 🔍 Önerim: **{secilen_film['ad']}**")
-            
-            if oneri_poster:
-                # Posteri biraz daha kibar (küçük) gösterelim ki çok yer kaplamasın
-                st.image(oneri_poster, width=250)
-            
-            st.success("Bu film tam sana göre görünüyor!")
+        secilen = random.choice(film_havuzu)
+        oneri_poster = get_poster_only(secilen['id'])
+        st.markdown(f"### 🔍 Önerim: **{secilen['ad']}**")
+        if oneri_poster: st.image(oneri_poster, width=250)
 
-st.divider()
-# --- KÜRASYON KÖŞESİ (SİSLİ TEPELER) BURADAN DEVAM EDER ---
-
-# --- ŞİMDİ EN ALTA KÜRASYON KÖŞESİNİ EKLEYELİM ---
-# st.write("") # Boşluk
-# st.write("") # Boşluk
-# st.divider()
-
-# # Kürasyon Listesi
-# curation_list = [
-#     {"ad": "Jane Eyre", "yil": "2011", "id": "38684"},
-#     {"ad": "Atonement", "yil": "2007", "id": "4347"},
-#     {"ad": "Rebecca", "yil": "1940", "id": "223"},
-#     {"ad": "Portrait of a Lady on Fire", "yil": "2019", "id": "531428"},
-#     {"ad": "Far from the Madding Crowd", "yil": "2015", "id": "250734"}
-# ]
-
-# if 'current_curation' not in st.session_state:
-#     st.session_state.current_curation = random.choice(curation_list)
-
-# selected = st.session_state.current_curation
-
-# # KUTU TASARIMI (Ana sayfanın altında şık bir bölüm)
-# st.markdown("### Wuthering Heights'ı beklerken")
-
-# col_poster, col_info = st.columns([1, 4])
-
-# with col_poster:
-#     poster_url = get_poster_only(selected['id'])
-#     if poster_url:
-#         st.image(poster_url, use_container_width=True)
-
-# with col_info:
-#     st.subheader(f"{selected['ad']} ({selected['yil']})")
-#     if st.button("Başka Bir Öneri"):
-#         st.session_state.current_curation = random.choice(curation_list)
-#         st.rerun()
-
-# FOOTER
 st.divider()
 st.caption("🎬 *This product uses the TMDB API but is not endorsed or certified by TMDB.*")
