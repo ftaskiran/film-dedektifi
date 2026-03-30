@@ -242,39 +242,39 @@ st.divider()
 # --- KÜRASYON KÖŞESİ (SİSLİ TEPELER) BURADAN DEVAM EDER ---
 
 # --- ŞİMDİ EN ALTA KÜRASYON KÖŞESİNİ EKLEYELİM ---
-st.write("") # Boşluk
-st.write("") # Boşluk
-st.divider()
+# st.write("") # Boşluk
+# st.write("") # Boşluk
+# st.divider()
 
-# Kürasyon Listesi
-curation_list = [
-    {"ad": "Jane Eyre", "yil": "2011", "id": "38684"},
-    {"ad": "Atonement", "yil": "2007", "id": "4347"},
-    {"ad": "Rebecca", "yil": "1940", "id": "223"},
-    {"ad": "Portrait of a Lady on Fire", "yil": "2019", "id": "531428"},
-    {"ad": "Far from the Madding Crowd", "yil": "2015", "id": "250734"}
-]
+# # Kürasyon Listesi
+# curation_list = [
+#     {"ad": "Jane Eyre", "yil": "2011", "id": "38684"},
+#     {"ad": "Atonement", "yil": "2007", "id": "4347"},
+#     {"ad": "Rebecca", "yil": "1940", "id": "223"},
+#     {"ad": "Portrait of a Lady on Fire", "yil": "2019", "id": "531428"},
+#     {"ad": "Far from the Madding Crowd", "yil": "2015", "id": "250734"}
+# ]
 
-if 'current_curation' not in st.session_state:
-    st.session_state.current_curation = random.choice(curation_list)
+# if 'current_curation' not in st.session_state:
+#     st.session_state.current_curation = random.choice(curation_list)
 
-selected = st.session_state.current_curation
+# selected = st.session_state.current_curation
 
-# KUTU TASARIMI (Ana sayfanın altında şık bir bölüm)
-st.markdown("### Wuthering Heights'ı beklerken")
+# # KUTU TASARIMI (Ana sayfanın altında şık bir bölüm)
+# st.markdown("### Wuthering Heights'ı beklerken")
 
-col_poster, col_info = st.columns([1, 4])
+# col_poster, col_info = st.columns([1, 4])
 
-with col_poster:
-    poster_url = get_poster_only(selected['id'])
-    if poster_url:
-        st.image(poster_url, use_container_width=True)
+# with col_poster:
+#     poster_url = get_poster_only(selected['id'])
+#     if poster_url:
+#         st.image(poster_url, use_container_width=True)
 
-with col_info:
-    st.subheader(f"{selected['ad']} ({selected['yil']})")
-    if st.button("Başka Bir Öneri"):
-        st.session_state.current_curation = random.choice(curation_list)
-        st.rerun()
+# with col_info:
+#     st.subheader(f"{selected['ad']} ({selected['yil']})")
+#     if st.button("Başka Bir Öneri"):
+#         st.session_state.current_curation = random.choice(curation_list)
+#         st.rerun()
 
 # FOOTER
 st.divider()
